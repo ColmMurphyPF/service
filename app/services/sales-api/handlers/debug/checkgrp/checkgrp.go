@@ -4,11 +4,11 @@ package checkgrp
 import (
 	"context"
 	"encoding/json"
+	"github.com/colmmurphy91/go-service/business/sys/database/sql"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/ardanlabs/service/business/sys/database"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
@@ -29,7 +29,7 @@ func (h Handlers) Readiness(w http.ResponseWriter, r *http.Request) {
 
 	status := "ok"
 	statusCode := http.StatusOK
-	if err := database.StatusCheck(ctx, h.DB); err != nil {
+	if err := sql.StatusCheck(ctx, h.DB); err != nil {
 		status = "db not ready"
 		statusCode = http.StatusInternalServerError
 	}

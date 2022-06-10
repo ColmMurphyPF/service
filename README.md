@@ -13,7 +13,7 @@ This class teaches how to build production-level services in Go leveraging the p
 
 Learn more about the project:
 
-[Wiki](https://github.com/ardanlabs/service/wiki) | [Course Outline](https://github.com/ardanlabs/service/wiki/course-outline) | [Class Schedule](https://www.eventbrite.com/o/ardan-labs-7092394651)
+[Wiki](https://github.com/colmmurphy91/go-service/wiki) | [Course Outline](https://github.com/colmmurphy91/go-service/wiki/course-outline) | [Class Schedule](https://www.eventbrite.com/o/ardan-labs-7092394651)
 
 ## Licensing
 

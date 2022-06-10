@@ -5,6 +5,8 @@ import (
 	"errors"
 	"expvar" // Calls init function.
 	"fmt"
+	"github.com/colmmurphy91/go-service/business/sys/database/mongodb"
+	"github.com/colmmurphy91/go-service/business/sys/database/sql"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,11 +15,10 @@ import (
 	"time"
 
 	"github.com/ardanlabs/conf/v3"
-	"github.com/ardanlabs/service/app/services/sales-api/handlers"
-	"github.com/ardanlabs/service/business/sys/auth"
-	"github.com/ardanlabs/service/business/sys/database"
-	"github.com/ardanlabs/service/foundation/keystore"
-	"github.com/ardanlabs/service/foundation/logger"
+	"github.com/colmmurphy91/go-service/app/services/sales-api/handlers"
+	"github.com/colmmurphy91/go-service/business/sys/auth"
+	"github.com/colmmurphy91/go-service/foundation/keystore"
+	"github.com/colmmurphy91/go-service/foundation/logger"
 	"github.com/emadolsky/automaxprocs/maxprocs"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -94,6 +95,12 @@ func run(log *zap.SugaredLogger) error {
 			MaxOpenConns int    `conf:"default:0"`
 			DisableTLS   bool   `conf:"default:true"`
 		}
+		MDB struct {
+			User     string `conf:"default:adminuser"`
+			Password string `conf:"default:password123,mask"`
+			Host     string `conf:"default:localhost"`
+			Database string `conf:"default:cafe"`
+		}
 		Zipkin struct {
 			ReporterURI string  `conf:"default:http://localhost:9411/api/v2/spans"`
 			ServiceName string  `conf:"default:sales-api"`
@@ -151,9 +158,9 @@ func run(log *zap.SugaredLogger) error {
 	// Database Support
 
 	// Create connectivity to the database.
-	log.Infow("startup", "status", "initializing database support", "host", cfg.DB.Host)
+	log.Infow("startup", "status", "initializing database support", "host", cfg.DB)
 
-	db, err := database.Open(database.Config{
+	db, err := sql.Open(sql.Config{
 		User:         cfg.DB.User,
 		Password:     cfg.DB.Password,
 		Host:         cfg.DB.Host,
@@ -162,6 +169,18 @@ func run(log *zap.SugaredLogger) error {
 		MaxOpenConns: cfg.DB.MaxOpenConns,
 		DisableTLS:   cfg.DB.DisableTLS,
 	})
+
+	// Create connectivity to the database.
+	log.Infow("startup", "status", "initializing mongo support", "host", cfg.MDB)
+
+	mDB, err := mongodb.Open(
+		mongodb.Config{
+			User:     cfg.MDB.User,
+			Password: cfg.MDB.Password,
+			Host:     cfg.MDB.Host,
+			DBName:   cfg.MDB.Database,
+		},
+	)
 	if err != nil {
 		return fmt.Errorf("connecting to db: %w", err)
 	}
@@ -220,6 +239,7 @@ func run(log *zap.SugaredLogger) error {
 		Log:      log,
 		Auth:     auth,
 		DB:       db,
+		MDB:      mDB,
 	})
 
 	// Construct a server to service the requests against the mux.

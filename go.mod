@@ -1,4 +1,4 @@
-module github.com/ardanlabs/service
+module github.com/colmmurphy91/go-service
 
 go 1.17
 

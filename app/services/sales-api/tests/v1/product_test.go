@@ -9,11 +9,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ardanlabs/service/app/services/sales-api/handlers"
-	"github.com/ardanlabs/service/business/core/product"
-	"github.com/ardanlabs/service/business/data/dbtest"
-	"github.com/ardanlabs/service/business/sys/validate"
-	v1Web "github.com/ardanlabs/service/business/web/v1"
+	"github.com/colmmurphy91/go-service/app/services/sales-api/handlers"
+	"github.com/colmmurphy91/go-service/business/core/product"
+	"github.com/colmmurphy91/go-service/business/data/dbtest"
+	"github.com/colmmurphy91/go-service/business/sys/validate"
+	v1Web "github.com/colmmurphy91/go-service/business/web/v1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
@@ -35,7 +35,7 @@ type ProductTests struct {
 func TestProducts(t *testing.T) {
 	t.Parallel()
 
-	test := dbtest.NewIntegration(t, c, "inttestprods")
+	test := dbtest.NewIntegration(t, sqlC, "inttestprods")
 	t.Cleanup(test.Teardown)
 
 	shutdown := make(chan os.Signal, 1)

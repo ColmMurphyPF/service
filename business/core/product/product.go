@@ -7,11 +7,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/colmmurphy91/go-service/business/sys/database/sql"
 	"time"
 
-	"github.com/ardanlabs/service/business/core/product/db"
-	"github.com/ardanlabs/service/business/sys/database"
-	"github.com/ardanlabs/service/business/sys/validate"
+	"github.com/colmmurphy91/go-service/business/core/product/db"
+	"github.com/colmmurphy91/go-service/business/sys/validate"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
@@ -71,7 +71,7 @@ func (c Core) Update(ctx context.Context, productID string, up UpdateProduct, no
 
 	dbPrd, err := c.store.QueryByID(ctx, productID)
 	if err != nil {
-		if errors.Is(err, database.ErrDBNotFound) {
+		if errors.Is(err, sql.ErrDBNotFound) {
 			return ErrNotFound
 		}
 		return fmt.Errorf("updating product productID[%s]: %w", productID, err)
@@ -126,7 +126,7 @@ func (c Core) QueryByID(ctx context.Context, productID string) (Product, error) 
 
 	dbPrd, err := c.store.QueryByID(ctx, productID)
 	if err != nil {
-		if errors.Is(err, database.ErrDBNotFound) {
+		if errors.Is(err, sql.ErrDBNotFound) {
 			return Product{}, ErrNotFound
 		}
 		return Product{}, fmt.Errorf("query: %w", err)

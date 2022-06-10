@@ -3,25 +3,25 @@ package commands
 import (
 	"context"
 	"fmt"
+	"github.com/colmmurphy91/go-service/business/sys/database/sql"
 	"os"
 	"time"
 
-	"github.com/ardanlabs/service/business/core/user"
-	"github.com/ardanlabs/service/business/sys/auth"
-	"github.com/ardanlabs/service/business/sys/database"
-	"github.com/ardanlabs/service/foundation/keystore"
+	"github.com/colmmurphy91/go-service/business/core/user"
+	"github.com/colmmurphy91/go-service/business/sys/auth"
+	"github.com/colmmurphy91/go-service/foundation/keystore"
 	"github.com/golang-jwt/jwt/v4"
 	"go.uber.org/zap"
 )
 
 // GenToken generates a JWT for the specified user.
-func GenToken(log *zap.SugaredLogger, cfg database.Config, userID string, kid string) error {
+func GenToken(log *zap.SugaredLogger, cfg sql.Config, userID string, kid string) error {
 	if userID == "" || kid == "" {
 		fmt.Println("help: gentoken <user_id> <kid>")
 		return ErrHelp
 	}
 
-	db, err := database.Open(cfg)
+	db, err := sql.Open(cfg)
 	if err != nil {
 		return fmt.Errorf("connect database: %w", err)
 	}

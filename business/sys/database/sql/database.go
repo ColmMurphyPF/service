@@ -1,5 +1,5 @@
 // Package database provides support for access the database.
-package database
+package sql
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ardanlabs/service/foundation/web"
+	"github.com/colmmurphy91/go-service/foundation/web"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq" // Calls init function.
 	"go.uber.org/zap"

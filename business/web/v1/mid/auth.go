@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ardanlabs/service/business/sys/auth"
-	v1Web "github.com/ardanlabs/service/business/web/v1"
-	"github.com/ardanlabs/service/foundation/web"
+	"github.com/colmmurphy91/go-service/business/sys/auth"
+	v1Web "github.com/colmmurphy91/go-service/business/web/v1"
+	"github.com/colmmurphy91/go-service/foundation/web"
 )
 
 // Authenticate validates a JWT from the `Authorization` header.

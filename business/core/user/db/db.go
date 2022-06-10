@@ -4,8 +4,8 @@ package db
 import (
 	"context"
 	"fmt"
+	"github.com/colmmurphy91/go-service/business/sys/database/sql"
 
-	"github.com/ardanlabs/service/business/sys/database"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
@@ -13,7 +13,7 @@ import (
 // Store manages the set of APIs for user access.
 type Store struct {
 	log          *zap.SugaredLogger
-	tr           database.Transactor
+	tr           sql.Transactor
 	db           sqlx.ExtContext
 	isWithinTran bool
 }
@@ -32,7 +32,7 @@ func (s Store) WithinTran(ctx context.Context, fn func(sqlx.ExtContext) error) e
 	if s.isWithinTran {
 		return fn(s.db)
 	}
-	return database.WithinTran(ctx, s.log, s.tr, fn)
+	return sql.WithinTran(ctx, s.log, s.tr, fn)
 }
 
 // Tran return new Store with transaction in it.
@@ -49,11 +49,11 @@ func (s Store) Tran(tx sqlx.ExtContext) Store {
 func (s Store) Create(ctx context.Context, usr User) error {
 	const q = `
 	INSERT INTO users
-		(user_id, name, email, password_hash, roles, date_created, date_updated)
+		(user_id, name, email, password_hash, roles, date_created, date_updated, confirmed, confirm_hash)
 	VALUES
-		(:user_id, :name, :email, :password_hash, :roles, :date_created, :date_updated)`
+		(:user_id, :name, :email, :password_hash, :roles, :date_created, :date_updated, :confirmed, :confirm_hash)`
 
-	if err := database.NamedExecContext(ctx, s.log, s.db, q, usr); err != nil {
+	if err := sql.NamedExecContext(ctx, s.log, s.db, q, usr); err != nil {
 		return fmt.Errorf("inserting user: %w", err)
 	}
 
@@ -70,11 +70,13 @@ func (s Store) Update(ctx context.Context, usr User) error {
 		"email" = :email,
 		"roles" = :roles,
 		"password_hash" = :password_hash,
-		"date_updated" = :date_updated
+		"date_updated" = :date_updated,
+		"confirmed" = :confirmed,
+		"confirm_hash" = :confirm_hash
 	WHERE
 		user_id = :user_id`
 
-	if err := database.NamedExecContext(ctx, s.log, s.db, q, usr); err != nil {
+	if err := sql.NamedExecContext(ctx, s.log, s.db, q, usr); err != nil {
 		return fmt.Errorf("updating userID[%s]: %w", usr.ID, err)
 	}
 
@@ -95,7 +97,7 @@ func (s Store) Delete(ctx context.Context, userID string) error {
 	WHERE
 		user_id = :user_id`
 
-	if err := database.NamedExecContext(ctx, s.log, s.db, q, data); err != nil {
+	if err := sql.NamedExecContext(ctx, s.log, s.db, q, data); err != nil {
 		return fmt.Errorf("deleting userID[%s]: %w", userID, err)
 	}
 
@@ -122,7 +124,7 @@ func (s Store) Query(ctx context.Context, pageNumber int, rowsPerPage int) ([]Us
 	OFFSET :offset ROWS FETCH NEXT :rows_per_page ROWS ONLY`
 
 	var usrs []User
-	if err := database.NamedQuerySlice(ctx, s.log, s.db, q, data, &usrs); err != nil {
+	if err := sql.NamedQuerySlice(ctx, s.log, s.db, q, data, &usrs); err != nil {
 		return nil, fmt.Errorf("selecting users: %w", err)
 	}
 
@@ -146,7 +148,7 @@ func (s Store) QueryByID(ctx context.Context, userID string) (User, error) {
 		user_id = :user_id`
 
 	var usr User
-	if err := database.NamedQueryStruct(ctx, s.log, s.db, q, data, &usr); err != nil {
+	if err := sql.NamedQueryStruct(ctx, s.log, s.db, q, data, &usr); err != nil {
 		return User{}, fmt.Errorf("selecting userID[%q]: %w", userID, err)
 	}
 
@@ -170,7 +172,7 @@ func (s Store) QueryByEmail(ctx context.Context, email string) (User, error) {
 		email = :email`
 
 	var usr User
-	if err := database.NamedQueryStruct(ctx, s.log, s.db, q, data, &usr); err != nil {
+	if err := sql.NamedQueryStruct(ctx, s.log, s.db, q, data, &usr); err != nil {
 		return User{}, fmt.Errorf("selecting email[%q]: %w", email, err)
 	}
 

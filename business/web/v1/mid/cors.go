@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/ardanlabs/service/foundation/web"
+	"github.com/colmmurphy91/go-service/foundation/web"
 )
 
 // Cors sets the response headers needed for Cross-Origin Resource Sharing
@@ -19,7 +19,7 @@ func Cors(origin string) web.Middleware {
 			// Set the CORS headers to the response.
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-			w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+			w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-AdminToken, Authorization")
 
 			// Call the next handler.
 			return handler(ctx, w, r)

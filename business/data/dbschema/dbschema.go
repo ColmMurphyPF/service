@@ -5,9 +5,9 @@ import (
 	"context"
 	_ "embed" // Calls init function.
 	"fmt"
+	"github.com/colmmurphy91/go-service/business/sys/database/sql"
 
 	"github.com/ardanlabs/darwin"
-	"github.com/ardanlabs/service/business/sys/database"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -25,7 +25,7 @@ var (
 // Migrate attempts to bring the schema for db up to date with the migrations
 // defined in this package.
 func Migrate(ctx context.Context, db *sqlx.DB) error {
-	if err := database.StatusCheck(ctx, db); err != nil {
+	if err := sql.StatusCheck(ctx, db); err != nil {
 		return fmt.Errorf("status check database: %w", err)
 	}
 
@@ -41,7 +41,7 @@ func Migrate(ctx context.Context, db *sqlx.DB) error {
 // Seed runs the set of seed-data queries against db. The queries are ran in a
 // transaction and rolled back if any fail.
 func Seed(ctx context.Context, db *sqlx.DB) error {
-	if err := database.StatusCheck(ctx, db); err != nil {
+	if err := sql.StatusCheck(ctx, db); err != nil {
 		return fmt.Errorf("status check database: %w", err)
 	}
 

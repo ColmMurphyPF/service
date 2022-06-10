@@ -3,15 +3,15 @@ package commands
 import (
 	"context"
 	"fmt"
+	"github.com/colmmurphy91/go-service/business/sys/database/sql"
 	"time"
 
-	"github.com/ardanlabs/service/business/data/dbschema"
-	"github.com/ardanlabs/service/business/sys/database"
+	"github.com/colmmurphy91/go-service/business/data/dbschema"
 )
 
 // Seed loads test data into the database.
-func Seed(cfg database.Config) error {
-	db, err := database.Open(cfg)
+func Seed(cfg sql.Config) error {
+	db, err := sql.Open(cfg)
 	if err != nil {
 		return fmt.Errorf("connect database: %w", err)
 	}

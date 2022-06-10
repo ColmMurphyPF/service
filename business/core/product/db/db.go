@@ -4,8 +4,8 @@ package db
 import (
 	"context"
 	"fmt"
+	"github.com/colmmurphy91/go-service/business/sys/database/sql"
 
-	"github.com/ardanlabs/service/business/sys/database"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
@@ -13,7 +13,7 @@ import (
 // Store manages the set of APIs for user access.
 type Store struct {
 	log          *zap.SugaredLogger
-	tr           database.Transactor
+	tr           sql.Transactor
 	db           sqlx.ExtContext
 	isWithinTran bool
 }
@@ -32,7 +32,7 @@ func (s Store) WithinTran(ctx context.Context, fn func(sqlx.ExtContext) error) e
 	if s.isWithinTran {
 		fn(s.db)
 	}
-	return database.WithinTran(ctx, s.log, s.tr, fn)
+	return sql.WithinTran(ctx, s.log, s.tr, fn)
 }
 
 // Tran return new Store with transaction in it.
@@ -54,7 +54,7 @@ func (s Store) Create(ctx context.Context, prd Product) error {
 	VALUES
 		(:product_id, :user_id, :name, :cost, :quantity, :date_created, :date_updated)`
 
-	if err := database.NamedExecContext(ctx, s.log, s.db, q, prd); err != nil {
+	if err := sql.NamedExecContext(ctx, s.log, s.db, q, prd); err != nil {
 		return fmt.Errorf("inserting product: %w", err)
 	}
 
@@ -75,7 +75,7 @@ func (s Store) Update(ctx context.Context, prd Product) error {
 	WHERE
 		product_id = :product_id`
 
-	if err := database.NamedExecContext(ctx, s.log, s.db, q, prd); err != nil {
+	if err := sql.NamedExecContext(ctx, s.log, s.db, q, prd); err != nil {
 		return fmt.Errorf("updating product productID[%s]: %w", prd.ID, err)
 	}
 
@@ -96,7 +96,7 @@ func (s Store) Delete(ctx context.Context, productID string) error {
 	WHERE
 		product_id = :product_id`
 
-	if err := database.NamedExecContext(ctx, s.log, s.db, q, data); err != nil {
+	if err := sql.NamedExecContext(ctx, s.log, s.db, q, data); err != nil {
 		return fmt.Errorf("deleting product productID[%s]: %w", productID, err)
 	}
 
@@ -129,7 +129,7 @@ func (s Store) Query(ctx context.Context, pageNumber int, rowsPerPage int) ([]Pr
 	OFFSET :offset ROWS FETCH NEXT :rows_per_page ROWS ONLY`
 
 	var prds []Product
-	if err := database.NamedQuerySlice(ctx, s.log, s.db, q, data, &prds); err != nil {
+	if err := sql.NamedQuerySlice(ctx, s.log, s.db, q, data, &prds); err != nil {
 		return nil, fmt.Errorf("selecting products: %w", err)
 	}
 
@@ -159,7 +159,7 @@ func (s Store) QueryByID(ctx context.Context, productID string) (Product, error)
 		p.product_id`
 
 	var prd Product
-	if err := database.NamedQueryStruct(ctx, s.log, s.db, q, data, &prd); err != nil {
+	if err := sql.NamedQueryStruct(ctx, s.log, s.db, q, data, &prd); err != nil {
 		return Product{}, fmt.Errorf("selecting product productID[%q]: %w", productID, err)
 	}
 
@@ -189,7 +189,7 @@ func (s Store) QueryByUserID(ctx context.Context, userID string) ([]Product, err
 		p.product_id`
 
 	var prds []Product
-	if err := database.NamedQuerySlice(ctx, s.log, s.db, q, data, &prds); err != nil {
+	if err := sql.NamedQuerySlice(ctx, s.log, s.db, q, data, &prds); err != nil {
 		return nil, fmt.Errorf("selecting products userID[%s]: %w", userID, err)
 	}
 

@@ -51,7 +51,7 @@ dev.setup.mac:
 # Building containers
 
 # $(shell git rev-parse --short HEAD)
-VERSION := 1.0
+VERSION := 1.3.25
 
 all: sales metrics
 
@@ -74,7 +74,7 @@ metrics:
 # ==============================================================================
 # Running from within k8s/kind
 
-KIND_CLUSTER := ardan-starter-cluster
+KIND_CLUSTER := go-service-cluster
 
 # Upgrade to latest Kind (>=v0.11): e.g. brew upgrade kind
 # For full Kind v0.11 release notes: https://github.com/kubernetes-sigs/kind/releases/tag/v0.11.0
@@ -98,16 +98,20 @@ kind-load:
 	kind load docker-image metrics-amd64:$(VERSION) --name $(KIND_CLUSTER)
 
 kind-apply:
+	kustomize build zarf/k8s/kind/sales-pod | kubectl apply -f -
 	kustomize build zarf/k8s/kind/database-pod | kubectl apply -f -
 	kubectl wait --namespace=database-system --timeout=120s --for=condition=Available deployment/database-pod
+	kustomize build zarf/k8s/kind/mongo-pod | kubectl apply -f -
+	kubectl wait --namespace=mongo-system --timeout=120s --for=condition=Available deployment/mongo-pod
 	kustomize build zarf/k8s/kind/zipkin-pod | kubectl apply -f -
 	kubectl wait --namespace=zipkin-system --timeout=120s --for=condition=Available deployment/zipkin-pod
-	kustomize build zarf/k8s/kind/sales-pod | kubectl apply -f -
+	#kustomize build zarf/k8s/kind/sales-pod | kubectl apply -f -
 
 kind-services-delete:
 	kustomize build zarf/k8s/kind/sales-pod | kubectl delete -f -
 	kustomize build zarf/k8s/kind/zipkin-pod | kubectl delete -f -
 	kustomize build zarf/k8s/kind/database-pod | kubectl delete -f -
+	kustomize build zarf/k8s/kind/mongo-pod | kubectl delete -f -
 
 kind-restart:
 	kubectl rollout restart deployment sales-pod

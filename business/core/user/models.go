@@ -1,10 +1,8 @@
 package user
 
 import (
+	"github.com/colmmurphy91/go-service/business/core/user/db"
 	"time"
-	"unsafe"
-
-	"github.com/ardanlabs/service/business/core/user/db"
 )
 
 // User represents an individual user.
@@ -16,6 +14,8 @@ type User struct {
 	PasswordHash []byte    `json:"-"`
 	DateCreated  time.Time `json:"date_created"`
 	DateUpdated  time.Time `json:"date_updated"`
+	ConfirmHash  int64     `json:"confirm_hash"`
+	Confirmed    bool      `json:"confirmed"`
 }
 
 // NewUser contains information needed to create a new User.
@@ -39,13 +39,29 @@ type UpdateUser struct {
 	Roles           []string `json:"roles"`
 	Password        *string  `json:"password"`
 	PasswordConfirm *string  `json:"password_confirm" validate:"omitempty,eqfield=Password"`
+	ConfirmHash     *int64   `json:"confirm_hash"`
+	Confirmed       *bool    `json:"confirmed"`
 }
 
 // =============================================================================
 
 func toUser(dbUsr db.User) User {
-	pu := (*User)(unsafe.Pointer(&dbUsr))
-	return *pu
+	var confirmHash int64
+	if dbUsr.ConfirmHash.Valid {
+		confirmHash = dbUsr.ConfirmHash.Int64
+	} else {
+		confirmHash = 0
+	}
+	return User{
+		ID:          dbUsr.ID,
+		Name:        dbUsr.Name,
+		Email:       dbUsr.Email,
+		Roles:       dbUsr.Roles,
+		DateCreated: dbUsr.DateCreated,
+		DateUpdated: dbUsr.DateUpdated,
+		ConfirmHash: confirmHash,
+		Confirmed:   dbUsr.Confirmed,
+	}
 }
 
 func toUserSlice(dbUsrs []db.User) []User {

@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/ardanlabs/service/business/sys/validate"
-	v1Web "github.com/ardanlabs/service/business/web/v1"
-	"github.com/ardanlabs/service/foundation/web"
+	"github.com/colmmurphy91/go-service/business/sys/validate"
+	v1Web "github.com/colmmurphy91/go-service/business/web/v1"
+	"github.com/colmmurphy91/go-service/foundation/web"
 	"go.uber.org/zap"
 )
 

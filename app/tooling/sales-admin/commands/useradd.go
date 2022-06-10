@@ -3,22 +3,22 @@ package commands
 import (
 	"context"
 	"fmt"
+	"github.com/colmmurphy91/go-service/business/sys/database/sql"
 	"time"
 
-	"github.com/ardanlabs/service/business/core/user"
-	"github.com/ardanlabs/service/business/sys/auth"
-	"github.com/ardanlabs/service/business/sys/database"
+	"github.com/colmmurphy91/go-service/business/core/user"
+	"github.com/colmmurphy91/go-service/business/sys/auth"
 	"go.uber.org/zap"
 )
 
 // UserAdd adds new users into the database.
-func UserAdd(log *zap.SugaredLogger, cfg database.Config, name, email, password string) error {
+func UserAdd(log *zap.SugaredLogger, cfg sql.Config, name, email, password string) error {
 	if name == "" || email == "" || password == "" {
 		fmt.Println("help: useradd <name> <email> <password>")
 		return ErrHelp
 	}
 
-	db, err := database.Open(cfg)
+	db, err := sql.Open(cfg)
 	if err != nil {
 		return fmt.Errorf("connect database: %w", err)
 	}

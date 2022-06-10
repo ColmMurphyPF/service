@@ -5,14 +5,19 @@ package user
 
 import (
 	"context"
+	crand "crypto/rand"
+	"database/sql"
+	"encoding/binary"
 	"errors"
 	"fmt"
+	csql "github.com/colmmurphy91/go-service/business/sys/database/sql"
+	"log"
+	"math/rand"
 	"time"
 
-	"github.com/ardanlabs/service/business/core/user/db"
-	"github.com/ardanlabs/service/business/sys/auth"
-	"github.com/ardanlabs/service/business/sys/database"
-	"github.com/ardanlabs/service/business/sys/validate"
+	"github.com/colmmurphy91/go-service/business/core/user/db"
+	"github.com/colmmurphy91/go-service/business/sys/auth"
+	"github.com/colmmurphy91/go-service/business/sys/validate"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
@@ -26,17 +31,21 @@ var (
 	ErrInvalidEmail          = errors.New("email is not valid")
 	ErrUniqueEmail           = errors.New("email is not unique")
 	ErrAuthenticationFailure = errors.New("authentication failed")
+	ErrUserNotConfirmed      = errors.New("user is not confirmed")
+	ErrAlreadyConfirmed      = errors.New("user is already confirmed")
 )
 
 // Core manages the set of APIs for user access.
 type Core struct {
 	store db.Store
+	log   *zap.SugaredLogger
 }
 
 // NewCore constructs a core for user api access.
 func NewCore(log *zap.SugaredLogger, sqlxDB *sqlx.DB) Core {
 	return Core{
 		store: db.NewStore(log, sqlxDB),
+		log:   log,
 	}
 }
 
@@ -51,6 +60,16 @@ func (c Core) Create(ctx context.Context, nu NewUser, now time.Time) (User, erro
 		return User{}, fmt.Errorf("generating password hash: %w", err)
 	}
 
+	var src cryptoSource
+	rnd := rand.New(src)
+
+	myNum := rnd.Intn(100000)
+
+	toSave := sql.NullInt64{
+		Int64: int64(myNum),
+		Valid: true,
+	}
+
 	dbUsr := db.User{
 		ID:           validate.GenerateID(),
 		Name:         nu.Name,
@@ -59,12 +78,14 @@ func (c Core) Create(ctx context.Context, nu NewUser, now time.Time) (User, erro
 		Roles:        nu.Roles,
 		DateCreated:  now,
 		DateUpdated:  now,
+		Confirmed:    false,
+		ConfirmHash:  toSave,
 	}
 
 	// This provides an example of how to execute a transaction if required.
 	tran := func(tx sqlx.ExtContext) error {
 		if err := c.store.Tran(tx).Create(ctx, dbUsr); err != nil {
-			if errors.Is(err, database.ErrDBDuplicatedEntry) {
+			if errors.Is(err, csql.ErrDBDuplicatedEntry) {
 				return fmt.Errorf("create: %w", ErrUniqueEmail)
 			}
 			return fmt.Errorf("create: %w", err)
@@ -74,6 +95,10 @@ func (c Core) Create(ctx context.Context, nu NewUser, now time.Time) (User, erro
 
 	if err := c.store.WithinTran(ctx, tran); err != nil {
 		return User{}, fmt.Errorf("tran: %w", err)
+	}
+
+	if err != nil {
+		return User{}, err
 	}
 
 	return toUser(dbUsr), nil
@@ -91,7 +116,7 @@ func (c Core) Update(ctx context.Context, userID string, uu UpdateUser, now time
 
 	dbUsr, err := c.store.QueryByID(ctx, userID)
 	if err != nil {
-		if errors.Is(err, database.ErrDBNotFound) {
+		if errors.Is(err, csql.ErrDBNotFound) {
 			return ErrNotFound
 		}
 		return fmt.Errorf("updating user userID[%s]: %w", userID, err)
@@ -113,10 +138,20 @@ func (c Core) Update(ctx context.Context, userID string, uu UpdateUser, now time
 		}
 		dbUsr.PasswordHash = pw
 	}
+	if uu.ConfirmHash == nil {
+		dbUsr.ConfirmHash = sql.NullInt64{
+			Valid: false,
+		}
+	}
+
+	if uu.Confirmed != nil {
+		dbUsr.Confirmed = true
+	}
+
 	dbUsr.DateUpdated = now
 
 	if err := c.store.Update(ctx, dbUsr); err != nil {
-		if errors.Is(err, database.ErrDBDuplicatedEntry) {
+		if errors.Is(err, csql.ErrDBDuplicatedEntry) {
 			return fmt.Errorf("updating user userID[%s]: %w", userID, ErrUniqueEmail)
 		}
 		return fmt.Errorf("update: %w", err)
@@ -156,7 +191,7 @@ func (c Core) QueryByID(ctx context.Context, userID string) (User, error) {
 
 	dbUsr, err := c.store.QueryByID(ctx, userID)
 	if err != nil {
-		if errors.Is(err, database.ErrDBNotFound) {
+		if errors.Is(err, csql.ErrDBNotFound) {
 			return User{}, ErrNotFound
 		}
 		return User{}, fmt.Errorf("query: %w", err)
@@ -175,7 +210,7 @@ func (c Core) QueryByEmail(ctx context.Context, email string) (User, error) {
 
 	dbUsr, err := c.store.QueryByEmail(ctx, email)
 	if err != nil {
-		if errors.Is(err, database.ErrDBNotFound) {
+		if errors.Is(err, csql.ErrDBNotFound) {
 			return User{}, ErrNotFound
 		}
 		return User{}, fmt.Errorf("query: %w", err)
@@ -190,10 +225,14 @@ func (c Core) QueryByEmail(ctx context.Context, email string) (User, error) {
 func (c Core) Authenticate(ctx context.Context, now time.Time, email, password string) (auth.Claims, error) {
 	dbUsr, err := c.store.QueryByEmail(ctx, email)
 	if err != nil {
-		if errors.Is(err, database.ErrDBNotFound) {
+		if errors.Is(err, csql.ErrDBNotFound) {
 			return auth.Claims{}, ErrNotFound
 		}
 		return auth.Claims{}, fmt.Errorf("query: %w", err)
+	}
+
+	if !dbUsr.Confirmed {
+		return auth.Claims{}, ErrUserNotConfirmed
 	}
 
 	// Compare the provided password with the saved hash. Use the bcrypt
@@ -215,4 +254,52 @@ func (c Core) Authenticate(ctx context.Context, now time.Time, email, password s
 	}
 
 	return claims, nil
+}
+
+func (c Core) Confirm(ctx context.Context, email string, token int64) error {
+	dbUser, err := c.store.QueryByEmail(ctx, email)
+
+	if err != nil {
+		if errors.Is(err, csql.ErrDBNotFound) {
+			return ErrNotFound
+		}
+		return fmt.Errorf("query: %w", err)
+	}
+
+	if dbUser.Confirmed {
+		return ErrAlreadyConfirmed
+	}
+
+	if dbUser.ConfirmHash.Int64 != token {
+		return errors.New("user token is not equal")
+	}
+
+	if dbUser.ConfirmHash.Int64 == token {
+		t := true
+		err := c.Update(ctx, dbUser.ID, UpdateUser{
+			Confirmed:   &t,
+			ConfirmHash: nil,
+		}, time.Now())
+
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+type cryptoSource struct{}
+
+func (s cryptoSource) Seed(seed int64) {}
+
+func (s cryptoSource) Int63() int64 {
+	return int64(s.Uint64() & ^uint64(1<<63))
+}
+
+func (s cryptoSource) Uint64() (v uint64) {
+	err := binary.Read(crand.Reader, binary.BigEndian, &v)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return v
 }

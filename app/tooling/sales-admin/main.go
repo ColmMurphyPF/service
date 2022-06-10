@@ -4,12 +4,12 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/colmmurphy91/go-service/business/sys/database/sql"
 	"os"
 
 	"github.com/ardanlabs/conf/v3"
-	"github.com/ardanlabs/service/app/tooling/sales-admin/commands"
-	"github.com/ardanlabs/service/business/sys/database"
-	"github.com/ardanlabs/service/foundation/logger"
+	"github.com/colmmurphy91/go-service/app/tooling/sales-admin/commands"
+	"github.com/colmmurphy91/go-service/foundation/logger"
 	"go.uber.org/zap"
 )
 
@@ -77,7 +77,7 @@ func run(log *zap.SugaredLogger) error {
 	// =========================================================================
 	// Commands
 
-	dbConfig := database.Config{
+	dbConfig := sql.Config{
 		User:       cfg.DB.User,
 		Password:   cfg.DB.Password,
 		Host:       cfg.DB.Host,
@@ -90,7 +90,7 @@ func run(log *zap.SugaredLogger) error {
 
 // processCommands handles the execution of the commands specified on
 // the command line.
-func processCommands(args conf.Args, log *zap.SugaredLogger, dbConfig database.Config) error {
+func processCommands(args conf.Args, log *zap.SugaredLogger, dbConfig sql.Config) error {
 	switch args.Num(0) {
 	case "migrate":
 		if err := commands.Migrate(dbConfig); err != nil {

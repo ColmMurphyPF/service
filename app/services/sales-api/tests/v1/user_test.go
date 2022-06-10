@@ -9,12 +9,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ardanlabs/service/app/services/sales-api/handlers"
-	"github.com/ardanlabs/service/business/core/user"
-	"github.com/ardanlabs/service/business/data/dbtest"
-	"github.com/ardanlabs/service/business/sys/auth"
-	"github.com/ardanlabs/service/business/sys/validate"
-	v1Web "github.com/ardanlabs/service/business/web/v1"
+	"github.com/colmmurphy91/go-service/app/services/sales-api/handlers"
+	"github.com/colmmurphy91/go-service/business/core/user"
+	"github.com/colmmurphy91/go-service/business/data/dbtest"
+	"github.com/colmmurphy91/go-service/business/sys/auth"
+	"github.com/colmmurphy91/go-service/business/sys/validate"
+	v1Web "github.com/colmmurphy91/go-service/business/web/v1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
@@ -32,7 +32,7 @@ type UserTests struct {
 func TestUsers(t *testing.T) {
 	t.Parallel()
 
-	test := dbtest.NewIntegration(t, c, "inttestusers")
+	test := dbtest.NewIntegration(t, sqlC, "inttestusers")
 	t.Cleanup(test.Teardown)
 
 	shutdown := make(chan os.Signal, 1)
@@ -49,6 +49,9 @@ func TestUsers(t *testing.T) {
 
 	t.Run("getToken404", tests.getToken404)
 	t.Run("getToken200", tests.getToken200)
+	t.Run("notConfirmed", tests.getToken400NotConfirmed)
+	t.Run("putConfirm200", tests.putConfirmUser)
+	t.Run("shouldGetToken", tests.getToken200AfterConfirmed)
 	t.Run("postUser400", tests.postUser400)
 	t.Run("postUser401", tests.postUser401)
 	t.Run("postUser403", tests.postUser403)
@@ -107,6 +110,84 @@ func (ut *UserTests) getToken200(t *testing.T) {
 			t.Logf("\t%s\tTest %d:\tShould be able to unmarshal the response.", dbtest.Success, testID)
 
 			// TODO(jlw) Should we ensure the token is valid?
+		}
+	}
+}
+
+func (ut *UserTests) getToken400NotConfirmed(t *testing.T) {
+	r := httptest.NewRequest(http.MethodGet, "/v1/users/token", nil)
+	w := httptest.NewRecorder()
+
+	r.SetBasicAuth("notconfirmed@example.com", "gophers")
+	ut.app.ServeHTTP(w, r)
+
+	t.Log("Should return error when user is not confirmed")
+	{
+		testID := 0
+		t.Logf("\tTest %d:\tWhen fetching a token with valid credentials.", testID)
+		{
+			if w.Code != http.StatusBadRequest {
+				t.Fatalf("\t%s\tTest %d:\tShould receive a status code of 200 for the response : %v", dbtest.Failed, testID, w.Code)
+			}
+			t.Logf("\t%s\tTest %d:\tShould receive a status code of 200 for the response.", dbtest.Success, testID)
+
+			var got struct {
+				Token string `json:"token"`
+			}
+			if err := json.NewDecoder(w.Body).Decode(&got); err != nil {
+				t.Fatalf("\t%s\tTest %d:\tShould be able to unmarshal the response : %v", dbtest.Failed, testID, err)
+			}
+			t.Logf("\t%s\tTest %d:\tShould be able to unmarshal the response.", dbtest.Success, testID)
+
+			// TODO(jlw) Should we ensure the token is valid?
+		}
+	}
+}
+
+func (ut *UserTests) getToken200AfterConfirmed(t *testing.T) {
+	r := httptest.NewRequest(http.MethodGet, "/v1/users/token", nil)
+	w := httptest.NewRecorder()
+
+	r.SetBasicAuth("notconfirmed@example.com", "gophers")
+	ut.app.ServeHTTP(w, r)
+
+	t.Log("Should return error when user is not confirmed")
+	{
+		testID := 0
+		t.Logf("\tTest %d:\tWhen fetching a token with valid credentials.", testID)
+		{
+			if w.Code != http.StatusOK {
+				t.Fatalf("\t%s\tTest %d:\tShould receive a status code of 200 for the response : %v", dbtest.Failed, testID, w.Code)
+			}
+			t.Logf("\t%s\tTest %d:\tShould receive a status code of 200 for the response.", dbtest.Success, testID)
+
+			var got struct {
+				Token string `json:"token"`
+			}
+			if err := json.NewDecoder(w.Body).Decode(&got); err != nil {
+				t.Fatalf("\t%s\tTest %d:\tShould be able to unmarshal the response : %v", dbtest.Failed, testID, err)
+			}
+			t.Logf("\t%s\tTest %d:\tShould be able to unmarshal the response.", dbtest.Success, testID)
+
+			// TODO(jlw) Should we ensure the token is valid?
+		}
+	}
+}
+
+func (ut *UserTests) putConfirmUser(t *testing.T) {
+	r := httptest.NewRequest(http.MethodPut, "/v1/users/confirm?email=notconfirmed@example.com&token=12345", nil)
+	w := httptest.NewRecorder()
+	ut.app.ServeHTTP(w, r)
+
+	t.Log("Should confirm the user")
+	{
+		testID := 0
+		t.Logf("\tTest %d:\tWhen fetching a token with valid credentials.", testID)
+		{
+			if w.Code != http.StatusOK {
+				t.Fatalf("\t%s\tTest %d:\tShould receive a status code of 200 for the response : %v", dbtest.Failed, testID, w.Code)
+			}
+			t.Logf("\t%s\tTest %d:\tShould receive a status code of 200 for the response.", dbtest.Success, testID)
 		}
 	}
 }

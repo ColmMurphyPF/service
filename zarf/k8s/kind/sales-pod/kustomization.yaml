@@ -8,10 +8,10 @@ patchesStrategicMerge:
 images:
 - name: metrics-image
   newName: metrics-amd64
-  newTag: "1.0"
+  newTag: 1.3.25
 - name: openzipkin
   newName: openzipkin/zipkin
   newTag: "2.23"
 - name: sales-api-image
   newName: sales-api-amd64
-  newTag: "1.0"
+  newTag: 1.3.25

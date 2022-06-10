@@ -4,18 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/colmmurphy91/go-service/business/sys/database/sql"
 	"os"
 	"strconv"
 	"time"
 
-	"github.com/ardanlabs/service/business/core/user"
-	"github.com/ardanlabs/service/business/sys/database"
+	"github.com/colmmurphy91/go-service/business/core/user"
 	"go.uber.org/zap"
 )
 
 // Users retrieves all users from the database.
-func Users(log *zap.SugaredLogger, cfg database.Config, pageNumber string, rowsPerPage string) error {
-	db, err := database.Open(cfg)
+func Users(log *zap.SugaredLogger, cfg sql.Config, pageNumber string, rowsPerPage string) error {
+	db, err := sql.Open(cfg)
 	if err != nil {
 		return fmt.Errorf("connect database: %w", err)
 	}

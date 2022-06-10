@@ -13,10 +13,10 @@ import (
 	"time"
 
 	"github.com/ardanlabs/conf/v3"
-	"github.com/ardanlabs/service/app/services/metrics/collector"
-	"github.com/ardanlabs/service/app/services/metrics/publisher"
-	expvarsrv "github.com/ardanlabs/service/app/services/metrics/publisher/expvar"
-	"github.com/ardanlabs/service/foundation/logger"
+	"github.com/colmmurphy91/go-service/app/services/metrics/collector"
+	"github.com/colmmurphy91/go-service/app/services/metrics/publisher"
+	expvarsrv "github.com/colmmurphy91/go-service/app/services/metrics/publisher/expvar"
+	"github.com/colmmurphy91/go-service/foundation/logger"
 	"github.com/emadolsky/automaxprocs/maxprocs"
 	"go.uber.org/zap"
 )

@@ -37,6 +37,6 @@ CMD ["./metrics"]
 LABEL org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.title="metrics" \
       org.opencontainers.image.authors="William Kennedy <bill@ardanlabs.com>" \
-      org.opencontainers.image.source="https://github.com/ardanlabs/service/app/sidecar/metrics" \
+      org.opencontainers.image.source="https://github.com/colmmurphy91/go-service/app/sidecar/metrics" \
       org.opencontainers.image.revision="${BUILD_REF}" \
       org.opencontainers.image.vendor="Ardan Labs"

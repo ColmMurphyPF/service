@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ardanlabs/service/business/core/product"
-	"github.com/ardanlabs/service/business/data/dbtest"
-	"github.com/ardanlabs/service/foundation/docker"
+	"github.com/colmmurphy91/go-service/business/core/product"
+	"github.com/colmmurphy91/go-service/business/data/dbtest"
+	"github.com/colmmurphy91/go-service/foundation/docker"
 	"github.com/google/go-cmp/cmp"
 )
 

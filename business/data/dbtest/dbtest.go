@@ -8,16 +8,17 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"fmt"
+	"github.com/colmmurphy91/go-service/business/sys/database/sql"
+	"github.com/golang-jwt/jwt/v4"
 	"testing"
 	"time"
 
-	dbUser "github.com/ardanlabs/service/business/core/user/db"
-	"github.com/ardanlabs/service/business/data/dbschema"
-	"github.com/ardanlabs/service/business/sys/auth"
-	"github.com/ardanlabs/service/business/sys/database"
-	"github.com/ardanlabs/service/foundation/docker"
-	"github.com/ardanlabs/service/foundation/keystore"
-	"github.com/golang-jwt/jwt/v4"
+	dbUser "github.com/colmmurphy91/go-service/business/core/user/db"
+
+	"github.com/colmmurphy91/go-service/business/data/dbschema"
+	"github.com/colmmurphy91/go-service/business/sys/auth"
+	"github.com/colmmurphy91/go-service/foundation/docker"
+	"github.com/colmmurphy91/go-service/foundation/keystore"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -50,7 +51,7 @@ func NewUnit(t *testing.T, c *docker.Container, dbName string) (*zap.SugaredLogg
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	dbM, err := database.Open(database.Config{
+	dbM, err := sql.Open(sql.Config{
 		User:       "postgres",
 		Password:   "postgres",
 		Host:       c.Host,
@@ -63,7 +64,7 @@ func NewUnit(t *testing.T, c *docker.Container, dbName string) (*zap.SugaredLogg
 
 	t.Log("Waiting for database to be ready ...")
 
-	if err := database.StatusCheck(ctx, dbM); err != nil {
+	if err := sql.StatusCheck(ctx, dbM); err != nil {
 		t.Fatalf("status check database: %v", err)
 	}
 
@@ -76,7 +77,7 @@ func NewUnit(t *testing.T, c *docker.Container, dbName string) (*zap.SugaredLogg
 
 	// =========================================================================
 
-	db, err := database.Open(database.Config{
+	db, err := sql.Open(sql.Config{
 		User:       "postgres",
 		Password:   "postgres",
 		Host:       c.Host,

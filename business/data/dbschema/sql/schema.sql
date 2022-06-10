@@ -1,43 +1,61 @@
 -- Version: 1.1
 -- Description: Create table users
-CREATE TABLE users (
-	user_id       UUID,
-	name          TEXT,
-	email         TEXT UNIQUE,
-	roles         TEXT[],
-	password_hash TEXT,
-	date_created  TIMESTAMP,
-	date_updated  TIMESTAMP,
-
-	PRIMARY KEY (user_id)
+CREATE TABLE users
+(
+    user_id       UUID,
+    name          TEXT,
+    email         TEXT UNIQUE,
+    roles         TEXT[],
+    password_hash TEXT,
+    date_created  TIMESTAMP,
+    date_updated  TIMESTAMP,
+    confirmed     BOOL not null default false,
+    confirm_hash  INT,
+    PRIMARY KEY (user_id)
 );
 
 -- Version: 1.2
 -- Description: Create table products
-CREATE TABLE products (
-	product_id   UUID,
-	name         TEXT,
-	cost         INT,
-	quantity     INT,
-	user_id      UUID,
-	date_created TIMESTAMP,
-	date_updated TIMESTAMP,
+CREATE TABLE products
+(
+    product_id   UUID,
+    name         TEXT,
+    cost         INT,
+    quantity     INT,
+    user_id      UUID,
+    date_created TIMESTAMP,
+    date_updated TIMESTAMP,
 
-	PRIMARY KEY (product_id),
-	FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+    PRIMARY KEY (product_id),
+    FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
 );
 
 -- Version: 1.3
 -- Description: Create table sales
-CREATE TABLE sales (
-	sale_id      UUID,
-	user_id      UUID,
-	product_id   UUID,
-	quantity     INT,
-	paid         INT,
-	date_created TIMESTAMP,
+CREATE TABLE sales
+(
+    sale_id      UUID,
+    user_id      UUID,
+    product_id   UUID,
+    quantity     INT,
+    paid         INT,
+    date_created TIMESTAMP,
 
-	PRIMARY KEY (sale_id),
-	FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-	FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
+    PRIMARY KEY (sale_id),
+    FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE
+);
+
+-- Version: 1.4
+-- Description: Create Table Cafe
+CREATE TABLE cafes
+(
+    cafe_id   UUID,
+    owner_id  UUID,
+    cafe_name TEXT,
+    address   TEXT,
+    logo_url  TEXT,
+
+    PRIMARY KEY (cafe_id),
+    FOREIGN KEY (owner_id) REFERENCES users (user_id)
 );

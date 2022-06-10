@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/ardanlabs/service/business/core/user"
-	"github.com/ardanlabs/service/business/sys/auth"
-	v1Web "github.com/ardanlabs/service/business/web/v1"
-	"github.com/ardanlabs/service/foundation/web"
+	"github.com/colmmurphy91/go-service/business/core/user"
+	"github.com/colmmurphy91/go-service/business/sys/auth"
+	v1Web "github.com/colmmurphy91/go-service/business/web/v1"
+	"github.com/colmmurphy91/go-service/foundation/web"
 )
 
 // Handlers manages the set of user endpoints.
@@ -177,6 +177,8 @@ func (h Handlers) Token(ctx context.Context, w http.ResponseWriter, r *http.Requ
 			return v1Web.NewRequestError(err, http.StatusNotFound)
 		case errors.Is(err, user.ErrAuthenticationFailure):
 			return v1Web.NewRequestError(err, http.StatusUnauthorized)
+		case errors.Is(err, user.ErrUserNotConfirmed):
+			return v1Web.NewRequestError(err, http.StatusBadRequest)
 		default:
 			return fmt.Errorf("authenticating: %w", err)
 		}
@@ -191,4 +193,22 @@ func (h Handlers) Token(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	}
 
 	return web.Respond(ctx, w, tkn, http.StatusOK)
+}
+
+func (h Handlers) Confirm(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	email := r.URL.Query().Get("email")
+	token := r.URL.Query().Get("token")
+
+	tokenParsed, err := strconv.ParseInt(token, 10, 64)
+
+	if err != nil {
+		return v1Web.NewRequestError(err, http.StatusBadRequest)
+	}
+
+	err = h.User.Confirm(ctx, email, tokenParsed)
+	if err != nil {
+		return v1Web.NewRequestError(err, http.StatusBadRequest)
+	}
+
+	return web.Respond(ctx, w, nil, http.StatusOK)
 }

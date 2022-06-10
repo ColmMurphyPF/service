@@ -4,14 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/colmmurphy91/go-service/business/sys/auth"
 	"testing"
 	"time"
 
-	"github.com/ardanlabs/service/business/core/user"
-	"github.com/ardanlabs/service/business/data/dbschema"
-	"github.com/ardanlabs/service/business/data/dbtest"
-	"github.com/ardanlabs/service/business/sys/auth"
-	"github.com/ardanlabs/service/foundation/docker"
+	"github.com/colmmurphy91/go-service/business/core/user"
+	"github.com/colmmurphy91/go-service/business/data/dbschema"
+	"github.com/colmmurphy91/go-service/business/data/dbtest"
+	"github.com/colmmurphy91/go-service/foundation/docker"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -61,6 +61,9 @@ func TestUser(t *testing.T) {
 			if err != nil {
 				t.Fatalf("\t%s\tTest %d:\tShould be able to retrieve user by ID: %s.", dbtest.Failed, testID, err)
 			}
+			if saved.Confirmed == true {
+				t.Fatalf("\t%s\tTest %d:\tUser should not be confirmed: %s.", dbtest.Failed, testID, err)
+			}
 			t.Logf("\t%s\tTest %d:\tShould be able to retrieve user by ID.", dbtest.Success, testID)
 
 			if diff := cmp.Diff(usr, saved); diff != "" {
@@ -69,8 +72,9 @@ func TestUser(t *testing.T) {
 			t.Logf("\t%s\tTest %d:\tShould get back the same user.", dbtest.Success, testID)
 
 			upd := user.UpdateUser{
-				Name:  dbtest.StringPointer("Jacob Walker"),
-				Email: dbtest.StringPointer("jacob@ardanlabs.com"),
+				Name:        dbtest.StringPointer("Jacob Walker"),
+				Email:       dbtest.StringPointer("jacob@ardanlabs.com"),
+				ConfirmHash: &saved.ConfirmHash,
 			}
 
 			if err := core.Update(ctx, usr.ID, upd, now); err != nil {
@@ -99,6 +103,30 @@ func TestUser(t *testing.T) {
 			} else {
 				t.Logf("\t%s\tTest %d:\tShould be able to see updates to Email.", dbtest.Success, testID)
 			}
+
+			err = core.Confirm(ctx, saved.Email, 1234567)
+			if err == nil {
+				t.Fatalf("\t%s\tTest %d:\tShould not be able to confirm user : %s.", dbtest.Failed, testID, err)
+			}
+			t.Logf("\t%s\tTest %d:\tShould not be able to confirm user with incorrect token", dbtest.Success, testID)
+
+			err = core.Confirm(ctx, saved.Email, saved.ConfirmHash)
+			if err != nil {
+				t.Fatalf("\t%s\tTest %d:\tShould not be able to confirm user : %s.", dbtest.Failed, testID, err)
+			}
+			t.Logf("\t%s\tTest %d:\tShould be able to confirm user with correct token", dbtest.Success, testID)
+
+			confirmed, err := core.QueryByEmail(ctx, saved.Email)
+
+			if !confirmed.Confirmed {
+				t.Fatalf("\t%s\tTest %d:\tUser should be confirmed : %s.", dbtest.Failed, testID, err)
+			}
+
+			if confirmed.ConfirmHash != 0 {
+				t.Fatalf("\t%s\tTest %d:\tHash should be deleted : %s.", dbtest.Failed, testID, err)
+			}
+
+			t.Logf("\t%s\tTest %d:\tShould be able to confirm user", dbtest.Success, testID)
 
 			if err := core.Delete(ctx, usr.ID); err != nil {
 				t.Fatalf("\t%s\tTest %d:\tShould be able to delete user : %s.", dbtest.Failed, testID, err)

@@ -4,15 +4,17 @@ package handlers
 import (
 	"context"
 	"expvar"
+	"go.mongodb.org/mongo-driver/mongo"
 	"net/http"
 	"net/http/pprof"
 	"os"
 
-	"github.com/ardanlabs/service/app/services/sales-api/handlers/debug/checkgrp"
-	v1 "github.com/ardanlabs/service/app/services/sales-api/handlers/v1"
-	"github.com/ardanlabs/service/business/sys/auth"
-	"github.com/ardanlabs/service/business/web/v1/mid"
-	"github.com/ardanlabs/service/foundation/web"
+	"github.com/colmmurphy91/go-service/app/services/sales-api/handlers/debug/checkgrp"
+	v1 "github.com/colmmurphy91/go-service/app/services/sales-api/handlers/v1"
+	v2 "github.com/colmmurphy91/go-service/app/services/sales-api/handlers/v2"
+	"github.com/colmmurphy91/go-service/business/sys/auth"
+	"github.com/colmmurphy91/go-service/business/web/v1/mid"
+	"github.com/colmmurphy91/go-service/foundation/web"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
@@ -35,6 +37,7 @@ type APIMuxConfig struct {
 	Log      *zap.SugaredLogger
 	Auth     *auth.Auth
 	DB       *sqlx.DB
+	MDB      *mongo.Database
 }
 
 // APIMux constructs a http.Handler with all application routes defined.
@@ -65,6 +68,13 @@ func APIMux(cfg APIMuxConfig, options ...func(opts *Options)) http.Handler {
 
 	// Load the v1 routes.
 	v1.Routes(app, v1.Config{
+		Log:  cfg.Log,
+		Auth: cfg.Auth,
+		DB:   cfg.DB,
+		MDB:  cfg.MDB,
+	})
+
+	v2.Routes(app, v2.Config{
 		Log:  cfg.Log,
 		Auth: cfg.Auth,
 		DB:   cfg.DB,

@@ -1,9 +1,9 @@
 package db
 
 import (
-	"time"
-
+	"database/sql"
 	"github.com/lib/pq"
+	"time"
 )
 
 // User represent the structure we need for moving data
@@ -16,4 +16,6 @@ type User struct {
 	PasswordHash []byte         `db:"password_hash"`
 	DateCreated  time.Time      `db:"date_created"`
 	DateUpdated  time.Time      `db:"date_updated"`
+	Confirmed    bool           `db:"confirmed"`
+	ConfirmHash  sql.NullInt64  `db:"confirm_hash"`
 }
